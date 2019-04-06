@@ -11,4 +11,6 @@ One of the key modifications I made is that it only downloads posts made by the 
 
 Usage: python thp2epub.py -f FORUM_NAME LIST_OF_THREADS_SEPARATED_BY_SPACES
 
+Example: python thp2epub.py -f sdm 166 442 739
+
 There are a couple of issues with file closing that cause a PermissionError to show up, just find the temp file in %LOCALAPPDATA%\Temp and rename it to something with a .zip extension then unpack it to find the files inside.
