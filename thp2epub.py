@@ -176,7 +176,11 @@ def parse_post(root):
 
     label = root.find('label')
     if label is None:
-        label = root.find('div[@class="post originalpost"]').find('label')
+        label = root.find('div[@class="post originalpost"]')
+        if label is None:
+            label = root.find('div[@class="post originalpost knavanchor"]').find('label')
+        else:
+            label = root.find('div[@class="post originalpost"]').find('label')
     title = label.find('span[@class="filetitle"]')
     title = title.text.strip() if title is not None else None
     name = label.find('span[@class="postername"]')
@@ -208,7 +212,11 @@ def parse_post(root):
 
     blockquote = root.find('blockquote')
     if blockquote is None:
-        blockquote = root.find('div[@class="post originalpost"]').find('blockquote')
+        blockquote = root.find('div[@class="post originalpost"]')
+        if blockquote is None:
+            blockquote = root.find('div[@class="post originalpost knavanchor"]').find('blockquote')
+        else:
+            blockquote = root.find('div[@class="post originalpost"]').find('blockquote')
     content = []
     for item in blockquote:
         if item is str and item.strip() == '':
