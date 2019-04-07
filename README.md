@@ -10,7 +10,9 @@ It's a touhou-project.com downloader that scrapes posts from given threads.
 One of the key modifications I made is that it only downloads posts made by the OP by default, so no need to specify with -o.
 
 Requirements:
+
 lxml
+
 epub
 
 Usage: python thp2epub.py -f FORUM_NAME LIST_OF_THREADS_SEPARATED_BY_SPACES
