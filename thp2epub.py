@@ -144,6 +144,17 @@ class Author(object):
     def render(self):
         return '{}{}'.format(self.name, self.trip)
 
+def gettag(tree, tag):
+    # dfs to find 'label', 'blockquote', etc.
+    found = None
+    for temp in tree:
+        if temp.tag == tag:
+            return temp
+        found = gettag(temp, tag)
+        if found is not None and found.tag == tag:
+            break
+    return found
+
 
 def parse_post(root):
     # We use the filesize element because it contains the image name.
@@ -174,13 +185,19 @@ def parse_post(root):
     else:
         image = None
 
-    label = root.find('label')
-    if label is None:
+    #label = root.find('label')
+    label = gettag(root, 'label')
+    """if label is None:
         label = root.find('div[@class="post originalpost"]')
-        if label is None:
-            label = root.find('div[@class="post originalpost knavanchor"]').find('label')
-        else:
+        if label is not None:
             label = root.find('div[@class="post originalpost"]').find('label')
+        else:
+            label = root.find('div[@class="post originalpost knavanchor"]')
+            if label is not None:
+                label = root.find('div[@class="post originalpost knavanchor"]').find('label')
+            else:
+                label = root.find('div[@class="originalpost post"]').find('label')
+    """
     title = label.find('span[@class="filetitle"]')
     title = title.text.strip() if title is not None else None
     name = label.find('span[@class="postername"]')
@@ -210,13 +227,15 @@ def parse_post(root):
     except:
         date = datetime(2019, 1, 1, 0, 0).timetuple()
 
-    blockquote = root.find('blockquote')
-    if blockquote is None:
+    #blockquote = root.find('blockquote')
+    blockquote = gettag(root, 'blockquote')
+    """if blockquote is None:
         blockquote = root.find('div[@class="post originalpost"]')
         if blockquote is None:
             blockquote = root.find('div[@class="post originalpost knavanchor"]').find('blockquote')
         else:
             blockquote = root.find('div[@class="post originalpost"]').find('blockquote')
+    """
     content = []
     for item in blockquote:
         if item is str and item.strip() == '':
@@ -229,11 +248,12 @@ def parse_post(root):
 def parse_thread(url):
     tree = etree.parse(urlopen(url), etree.HTMLParser())
 
-    root = tree.find('//form[@id="delform"]')
+    """root = tree.find('//form[@id="delform"]')
     if root is None:
         root = tree.find('//div[@class="originalpost post"]')
-        if root is None:
-            root = tree.find('//body')
+        if root is None or root.find('blockquote') is None:
+            root = tree.find('//body')"""
+    root = tree.find('//body')
     op = parse_post(root)
 
     replies = []
