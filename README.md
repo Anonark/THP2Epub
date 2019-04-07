@@ -27,4 +27,4 @@ Usage: python thp2epub.py -f FORUM_NAME LIST_OF_THREADS_SEPARATED_BY_SPACES
 
 Example: python thp2epub.py -f sdm 166 442 739
 
-There are a couple of issues with file closing that cause a PermissionError to show up, just find the temp file in %LOCALAPPDATA%\Temp and rename it to something with a .zip extension then unpack it to find the files inside.
+There are a couple of issues with file closing that cause a PermissionError to show up, just find the temp file in %LOCALAPPDATA%\Temp and rename it to something with a .zip extension then unpack it to find the .xhtml files inside, which you can import into Calibre, convert to Epub then merge into one file using EpubMerge.
