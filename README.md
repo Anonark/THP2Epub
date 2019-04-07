@@ -15,6 +15,14 @@ lxml
 
 epub
 
+(oh and of course python3 but that should be obvious)
+
+Installing requirements:
+
+pip install lxml
+
+pip install epub
+
 Usage: python thp2epub.py -f FORUM_NAME LIST_OF_THREADS_SEPARATED_BY_SPACES
 
 Example: python thp2epub.py -f sdm 166 442 739
