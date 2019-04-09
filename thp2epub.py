@@ -366,8 +366,12 @@ def main(url, forum, only_op, threads, consoletext):
     
     nav_map.nav_point + nav_points"""
     #epub.write_epub(threads_list[0].title+'.epub', book)
-    generate(list_chaps, t.title, t.author.render(), "1", str(len(list_chaps)))
-    consoletext.insert(END, 'Finished all operations! The story has been saved as ' + t.title + "_" + "1" + "-" + str(len(list_chaps)) + ".epub")
+    invalidchars = [':', '<', '>', '"', '/', '\\', '|', '?', '*']
+    temptitle = t.title
+    for i in invalidchars:
+        temptitle = temptitle.replace(i, '')
+    generate(list_chaps, temptitle, t.author.render(), "1", str(len(list_chaps)))
+    consoletext.insert(END, 'Finished all operations! The story has been saved as ' + temptitle + "_" + "1" + "-" + str(len(list_chaps)) + ".epub")
 
 
 def restart():
