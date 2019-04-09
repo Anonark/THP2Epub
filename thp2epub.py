@@ -21,7 +21,6 @@ from lxml import etree
 from lxml.builder import E
 from time import strptime, strftime
 from datetime import datetime
-from ebooklib import epub
 #from argparse import ArgumentParser
 
 from functions import generate
@@ -74,7 +73,7 @@ class Thread(object):
         body = html.find('body')
         body.append(self.op.render(display_title=False))
         #calc mean length of replies
-        mean = (self.replies[0].content + self.replies[-1].content) / 2
+        mean = (len(self.replies[0].content) + len(self.replies[-1].content)) / 2
         """for reply in self.replies:
             mean += len(reply.content)
         mean /= len(self.replies)"""
