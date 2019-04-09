@@ -17,7 +17,7 @@
 
 from __future__ import unicode_literals
 
-from lxml import etree
+from lxml import etree, html
 from lxml.builder import E
 from time import strptime, strftime
 from datetime import datetime
@@ -28,7 +28,7 @@ from functions import generate
 import os
 import sys
 
-from tkinter import Tk, Entry, Text, IntVar, Checkbutton, Button, END, Menu
+from tkinter import Tk, Entry, Text, IntVar, Checkbutton, Button, END, Menu, Listbox, LEFT, RIGHT, BOTTOM
 
 
 try:
@@ -164,6 +164,58 @@ class Author(object):
             return '{}{}'.format(self.name, self.trip)
         else:
             return 'Anonymous'
+        
+class SearchResult(object):
+    def __init__(self, title, author, forum, links):
+        self.title = title
+        self.author = author
+        self.forum = forum
+        self.links = links
+        
+    def __repr__(self):
+        if self.author is not None:
+            return self.title + ' by ' + self.author + ' in ' + self.forum + '\n'
+        else:
+            return self.title + ' by Anonymous in ' + self.forum + '\n'
+
+def searchstory(title, results):
+    global finaldict
+    finaldict = {}
+    tree = html.document_fromstring(urlopen("https://www.touhou-project.com/storylist.php").read().decode('utf-8')).getroottree()
+    root = tree.find('//body').find('div[@id="list"]')
+    #print('root', root)
+    listofcyoa = root.xpath("//td[@class='listentry cyoa']")
+    #print('listofcyoa:', listofcyoa)
+    cyoatuples = []
+    for cyoa in listofcyoa:
+        storytitle = cyoa.find('b').find("span[@style='color:purple']").text
+        storyauthor = cyoa.find("span[@style='color:maroon']").find('b').text
+        storyforum = cyoa.find('b').find('a').find("span[@style='color:blue']").text
+        #print('cyoa:', storytitle, storyauthor)
+        storylinks = cyoa.xpath('a[starts-with(@href, "http://www.touhou-project.com")]')
+        try:
+            storythreads = [int(i.text) for i in storylinks]
+        except:
+            continue
+        cyoatuples.append(SearchResult(storytitle, storyauthor, storyforum, storythreads))
+    searchresults = []
+    for double in cyoatuples:
+        if title.lower() in double.title.lower() or (double.author is not None and title.lower() in double.author.lower()):
+            searchresults.append(double)
+    #print('searchresults:', searchresults)
+    searchresults.sort(key=lambda x:x.title.lower())
+    for result in searchresults:
+        finaldict[result.__repr__()] = result
+        results.insert(END, result)
+        
+def setthreadandforum(searchresult, threadentry, forumentry):
+    threadentry.delete(0, END)
+    forumentry.delete(0, END)
+    temp = ""
+    for i in searchresult.links:
+        temp += str(i) + " "
+    threadentry.insert(END, temp[:-1])
+    forumentry.insert(END, searchresult.forum)
 
 def gettag(tree, tag):
     # dfs to find 'label', 'blockquote', etc.
@@ -391,22 +443,36 @@ if __name__ == '__main__':
     consolelog = Text(mainwindow)
     consolelog.pack()
     #get forum name
-    forum = Entry(mainwindow)
+    forum = Entry(mainwindow, width=60)
     forum.insert(END, 'Forum Name (EX: sdm)')
-    forum.pack()
+    forum.pack(side=BOTTOM)
     
     #get thread ids (title search coming soon)
-    story = Entry(mainwindow)
+    story = Entry(mainwindow, width=60)
     story.insert(END, 'Thread IDs (EX: 142 255 2736)')
-    story.pack()
+    story.pack(side=BOTTOM)
+    
+    #searchbar
+    searchbar = Entry(mainwindow, width=60)
+    searchbar.insert(END, 'Search title or author')
+    searchbar.pack()
+    
+    #search button
+    searchbutton = Button(mainwindow, text='Search', command=lambda:searchstory(searchbar.get(), searchresults))
+    searchbutton.pack()
+    
+    #search results
+    searchresults = Listbox(mainwindow, width=150)
+    searchresults.bind("<Double-Button-1>", lambda _:setthreadandforum(finaldict[searchresults.get(searchresults.curselection())], story, forum))
+    searchresults.pack(side=LEFT)
     
     #only get op posts?
-    onlyop = IntVar()
-    Checkbutton(mainwindow, text="Download only OP posts?", variable=onlyop).pack()
+    onlyop = IntVar(value=1)
+    Checkbutton(mainwindow, text="Download only OP posts?", variable=onlyop).pack(side=BOTTOM)
     
     #download button
     downloadbutton = Button(mainwindow, text='Download', command=lambda: main('https://www.touhou-project.com/{}/res/{}.html', forum.get(), True if onlyop.get() == 1 else False, story.get().split(), consolelog))
-    downloadbutton.pack()
+    downloadbutton.pack(side=BOTTOM)
     
     mainwindow.mainloop()
     """parser = ArgumentParser(description='Download and convert THP stories.')
