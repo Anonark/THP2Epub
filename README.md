@@ -7,7 +7,7 @@ Basically the same script, but with a couple of modifications to account for som
 
 It's a touhou-project.com downloader that scrapes posts from given threads.
 
-One of the key modifications I made is that it only downloads posts made by the OP by default, so no need to specify with -o.
+Now has a GUI!
 
 # Requirements:
 
