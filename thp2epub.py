@@ -24,8 +24,10 @@ from datetime import datetime
 import epub
 #from argparse import ArgumentParser
 
-from tkinter import Tk, Entry, Text, IntVar, Checkbutton, Button, END
-from tkinter.messagebox import showerror
+import os
+import sys
+
+from tkinter import Tk, Entry, Text, IntVar, Checkbutton, Button, END, Menu
 
 
 try:
@@ -152,7 +154,10 @@ class Author(object):
         self.mail = mail
 
     def render(self):
-        return '{}{}'.format(self.name, self.trip)
+        if self.name is not None or self.trip is not None:
+            return '{}{}'.format(self.name, self.trip)
+        else:
+            return 'Anonymous'
 
 def gettag(tree, tag):
     # dfs to find 'label', 'blockquote', etc.
@@ -260,29 +265,33 @@ def parse_thread(url, consoletext):
     consoletext.insert(END, 'Parsing thread...\n')
     try:
         tree = etree.parse(urlopen(url), etree.HTMLParser())
+        """root = tree.find('//form[@id="delform"]')
+        if root is None:
+            root = tree.find('//div[@class="originalpost post"]')
+            if root is None or root.find('blockquote') is None:
+                root = tree.find('//body')"""
+        root = tree.find('//body')
+        op = parse_post(root)
+    
+        replies = []
+        td = root.findall('.//td[@class="reply"]')
+        for reply in td:
+            replies.append(parse_post(reply))
+            
+            
+        consoletext.insert(END, 'Finished parsing thread!\n')
+        return Thread(op, replies)
     except HTTPError:
-        showerror('HTTPError', 'URL '+url+' not found!')
-        quit()
-
-    """root = tree.find('//form[@id="delform"]')
-    if root is None:
-        root = tree.find('//div[@class="originalpost post"]')
-        if root is None or root.find('blockquote') is None:
-            root = tree.find('//body')"""
-    root = tree.find('//body')
-    op = parse_post(root)
-
-    replies = []
-    td = root.findall('.//td[@class="reply"]')
-    for reply in td:
-        replies.append(parse_post(reply))
-        
-        
-    consoletext.insert(END, 'Finished parsing thread!\n')
-    return Thread(op, replies)
-
+        consoletext.insert(END, 'Thread not found!\n')
+        return
 
 def main(url, forum, only_op, threads, consoletext):
+    consoletext.delete(1.0,END)
+    try:
+        threads = [int(i) for i in threads]
+    except:
+        consoletext.insert(END, 'Invalid characters found in thread list!')
+        return
     threads_list = []
     for thread in threads:
         consoletext.insert(END, 'Rendering of thread №{}…\n'.format(thread))
@@ -292,53 +301,74 @@ def main(url, forum, only_op, threads, consoletext):
         html = t.render(only_op)
 
         # Use b mode as it allows us to directly dump UTF-8 data.
+        consoletext.insert(END, 'Downloaded thread №{}, generating XHTML...\n'.format(thread))
         with open('{}.xhtml'.format(thread), 'wb') as f:
             f.write(etree.tostring(html, pretty_print=True, xml_declaration=True, doctype='<!DOCTYPE html SYSTEM "/tmp/test.dtd">', encoding='UTF-8'))
 
+    consoletext.insert(END, 'Finished downloading threads! Now generating Epub...\n')
+    success = False
+    while not success:
+        try:
+            book = epub.open(os.path.dirname(os.path.abspath(__file__)).replace('\\', '/')+threads_list[0].title+'.epub', 'w')
+            #with epub.open(threads_list[0].title+'.epub', 'w') as book:
+            t = threads_list[0]
+        
+            book.opf.metadata.add_title(t.title)
+            book.opf.metadata.add_creator(t.author.render())
+            book.opf.metadata.add_date(strftime('%y-%m-%dT%H:%M:%SZ'))
+            book.opf.metadata.add_language('en')
+        
+            for thread in threads:
+                filename = '{}.xhtml'.format(thread)
+                manifest_item = epub.opf.ManifestItem(identifier='thread_{}'.format(thread),
+                                                      href=filename,
+                                                      media_type='application/xhtml+xml')
+                book.add_item(filename, manifest_item, True)
+        
+            for image in images_list:
+                extension = image[-4:]
+                manifest_item = epub.opf.ManifestItem(identifier='image_{}'.format(image),
+                                                      href=image,
+                                                      media_type=mime_type[extension])
+                book.add_item(image, manifest_item, True)
+        
+            manifest_item = epub.opf.ManifestItem(identifier='style',
+                                                  href='story.css',
+                                                  media_type='text/css')
+            book.add_item('story.css', manifest_item)
+        
+            book.toc.title = t.title
+            nav_map = book.toc.nav_map
+            nav_points = []
+            for thread in threads:
+                nav_point = epub.ncx.NavPoint()
+                nav_point.identifier = 'thread_%d' % thread
+                nav_point.add_label('Thread №%d' % thread)
+                nav_point.src = '%d.xhtml' % thread
+                nav_points.append(nav_point)
+                
+            
+            nav_map.nav_point + nav_points
+            book.close()
+            success = True
+        except PermissionError:
+            consoletext.insert(END, 'Permission error! Trying again...\n')
+    consoletext.insert(END, 'Finished all operations! Find your downloaded file in: (TODO: add filepath)')
 
-    with epub.open('story.epub', 'w') as book:
-        t = threads_list[0]
 
-        book.opf.metadata.add_title(t.title)
-        book.opf.metadata.add_creator(t.author.render())
-        book.opf.metadata.add_date(strftime('%y-%m-%dT%H:%M:%SZ'))
-        book.opf.metadata.add_language('en')
-
-        for thread in threads:
-            filename = '{}.xhtml'.format(thread)
-            manifest_item = epub.opf.ManifestItem(identifier='thread_{}'.format(thread),
-                                                  href=filename,
-                                                  media_type='application/xhtml+xml')
-            book.add_item(filename, manifest_item, True)
-
-        for image in images_list:
-            extension = image[-4:]
-            manifest_item = epub.opf.ManifestItem(identifier='image_{}'.format(image),
-                                                  href=image,
-                                                  media_type=mime_type[extension])
-            book.add_item(image, manifest_item, True)
-
-        manifest_item = epub.opf.ManifestItem(identifier='style',
-                                              href='story.css',
-                                              media_type='text/css')
-        book.add_item('story.css', manifest_item)
-
-        book.toc.title = t.title
-        nav_map = book.toc.nav_map
-        for thread in threads:
-            nav_point = epub.ncx.NavPoint()
-            nav_point.identifier = 'thread_%d' % thread
-            nav_point.add_label('Thread №%d' % thread)
-            nav_point.src = '%d.xhtml' % thread
-            nav_map.nav_point.append(nav_point)
-    consoletext.insert(END, 'Finished downloading! Find your downloaded file in: (TODO: add filepath)')
-
+def restart():
+    os.execl(sys.executable, sys.executable, * sys.argv)
 
 if __name__ == '__main__':
     # do GUI
     mainwindow = Tk()
-    mainwindow.title = 'THP2Epub'
+    mainwindow.title('THP2Epub')
     #write widgets
+    #restart button
+    filemenu = Menu(mainwindow)
+    filemenu.add_command(label="Restart Program", command=restart)
+    mainwindow.config(menu=filemenu)
+    
     #show console log
     consolelog = Text(mainwindow)
     consolelog.pack()
@@ -357,7 +387,7 @@ if __name__ == '__main__':
     Checkbutton(mainwindow, text="Download only OP posts?", variable=onlyop).pack()
     
     #download button
-    downloadbutton = Button(mainwindow, text='Download', command=lambda: main('https://www.touhou-project.com/{}/res/{}.html', forum.get(), True if onlyop.get() == 1 else False, [int(i) for i in story.get().split()], consolelog))
+    downloadbutton = Button(mainwindow, text='Download', command=lambda: main('https://www.touhou-project.com/{}/res/{}.html', forum.get(), True if onlyop.get() == 1 else False, story.get().split(), consolelog))
     downloadbutton.pack()
     
     mainwindow.mainloop()
