@@ -311,15 +311,15 @@ def main(url, forum, only_op, threads, consoletext):
 
     consoletext.insert(END, 'Finished downloading threads! Now generating Epub...\n')
 
-    book = epub.EpubBook()
+    #book = epub.EpubBook()
     #with epub.open(threads_list[0].title+'.epub', 'w') as book:
     t = threads_list[0]
     
-    book.set_identifier(t.title+str(threads[0]))
+    """book.set_identifier(t.title+str(threads[0]))
     book.set_title(t.title)
     book.add_author(t.author.render())
     #book.set_date(strftime('%y-%m-%dT%H:%M:%SZ'))
-    book.set_language('en')
+    book.set_language('en')"""
     list_chaps = []
     for thread in threads:
         
@@ -365,7 +365,7 @@ def main(url, forum, only_op, threads, consoletext):
     nav_map.nav_point + nav_points"""
     #epub.write_epub(threads_list[0].title+'.epub', book)
     generate(list_chaps, t.title, t.author.render(), "1", str(len(list_chaps)))
-    consoletext.insert(END, 'Finished all operations! The story has been saved as', t.title + "_" + "1" + "-" + str(len(list_chaps)) + ".epub")
+    consoletext.insert(END, 'Finished all operations! The story has been saved as ' + t.title + "_" + "1" + "-" + str(len(list_chaps)) + ".epub")
 
 
 def restart():
