@@ -5,7 +5,7 @@
 ## Modifications & bug fixes provided by MKC 2019
 ##
 ## This program is free software; you can redistribute it and/or modify
-## it under the terms of the GNU General Public License as published
+## itoim under the terms of the GNU General Public License as published
 ## by the Free Software Foundation; version 3 only.
 ##
 ## This program is distributed in the hope that it will be useful,
@@ -18,12 +18,15 @@
 from __future__ import unicode_literals
 
 from lxml import etree
-from lxml import html
 from lxml.builder import E
 from time import strptime, strftime
 from datetime import datetime
 import epub
-from argparse import ArgumentParser
+#from argparse import ArgumentParser
+
+from tkinter import Tk, Entry, Text, IntVar, Checkbutton, Button, END
+from tkinter.messagebox import showerror
+
 
 try:
     from urllib.request import urlopen
@@ -66,10 +69,17 @@ class Thread(object):
 
         body = html.find('body')
         body.append(self.op.render(display_title=False))
+        #calc mean length of replies
+        mean = 0
+        for reply in self.replies:
+            mean += len(reply.content)
+        mean /= len(self.replies)
 
         for reply in self.replies:
             # Remove user answers if not wanted.
-            if not reply.is_op(self.op):
+            if only_op and not reply.is_op(self.op):
+                continue
+            if (not reply.is_op(self.op) or not only_op) and len(reply.content) < mean:
                 continue
 
             body.append(reply.render())
@@ -245,8 +255,14 @@ def parse_post(root):
     return Post(title, author, date, image, content)
 
 
-def parse_thread(url):
-    tree = etree.parse(urlopen(url), etree.HTMLParser())
+def parse_thread(url, consoletext):
+    consoletext.insert(END, 'URL of thread: '+url+'\n')
+    consoletext.insert(END, 'Parsing thread...\n')
+    try:
+        tree = etree.parse(urlopen(url), etree.HTMLParser())
+    except HTTPError:
+        showerror('HTTPError', 'URL '+url+' not found!')
+        quit()
 
     """root = tree.find('//form[@id="delform"]')
     if root is None:
@@ -260,15 +276,17 @@ def parse_thread(url):
     td = root.findall('.//td[@class="reply"]')
     for reply in td:
         replies.append(parse_post(reply))
-
+        
+        
+    consoletext.insert(END, 'Finished parsing thread!\n')
     return Thread(op, replies)
 
 
-def main(url, forum, only_op, threads):
+def main(url, forum, only_op, threads, consoletext):
     threads_list = []
     for thread in threads:
-        print('Rendering of thread №{}…'.format(thread))
-        t = parse_thread(url.format(forum, thread))
+        consoletext.insert(END, 'Rendering of thread №{}…\n'.format(thread))
+        t = parse_thread(url.format(forum, thread), consoletext)
         threads_list.append(t)
 
         html = t.render(only_op)
@@ -313,11 +331,37 @@ def main(url, forum, only_op, threads):
             nav_point.add_label('Thread №%d' % thread)
             nav_point.src = '%d.xhtml' % thread
             nav_map.nav_point.append(nav_point)
-        book.close()
+    consoletext.insert(END, 'Finished downloading! Find your downloaded file in: (TODO: add filepath)')
 
 
 if __name__ == '__main__':
-    parser = ArgumentParser(description='Download and convert THP stories.')
+    # do GUI
+    mainwindow = Tk()
+    mainwindow.title = 'THP2Epub'
+    #write widgets
+    #show console log
+    consolelog = Text(mainwindow)
+    consolelog.pack()
+    #get forum name
+    forum = Entry(mainwindow)
+    forum.insert(END, 'Forum Name (EX: sdm)')
+    forum.pack()
+    
+    #get thread ids (title search coming soon)
+    story = Entry(mainwindow)
+    story.insert(END, 'Thread IDs (EX: 142 255 2736)')
+    story.pack()
+    
+    #only get op posts?
+    onlyop = IntVar()
+    Checkbutton(mainwindow, text="Download only OP posts?", variable=onlyop).pack()
+    
+    #download button
+    downloadbutton = Button(mainwindow, text='Download', command=lambda: main('https://www.touhou-project.com/{}/res/{}.html', forum.get(), True if onlyop.get() == 1 else False, [int(i) for i in story.get().split()], consolelog))
+    downloadbutton.pack()
+    
+    mainwindow.mainloop()
+    """parser = ArgumentParser(description='Download and convert THP stories.')
 
     parser.add_argument('threads', metavar='THREADS', nargs='+', type=int, help='List of the threads of the story.')
     parser.add_argument('-u', '--url', metavar='URL', default='https://www.touhou-project.com/{}/res/{}.html', help='URL pattern from which the story will be downloaded, with the first {} as the forum, and the second as the thread.')
@@ -326,4 +370,4 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    main(args.url, args.forum, args.only_op, args.threads)
+    main(args.url, args.forum, args.only_op, args.threads)"""
