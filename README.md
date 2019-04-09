@@ -21,6 +21,8 @@ epub
 
 tkinter
 
+bs4
+
 (oh and of course python3 but that should be obvious)
 
 ## Installing requirements
@@ -28,6 +30,8 @@ tkinter
 `pip install lxml`
 
 `pip install epub`
+
+`pip install bs4`
 
 Download ActiveTcl from [here](https://www.activestate.com/products/activetcl/)- it contains Tkinter
 
