@@ -306,53 +306,48 @@ def main(url, forum, only_op, threads, consoletext):
             f.write(etree.tostring(html, pretty_print=True, xml_declaration=True, doctype='<!DOCTYPE html SYSTEM "/tmp/test.dtd">', encoding='UTF-8'))
 
     consoletext.insert(END, 'Finished downloading threads! Now generating Epub...\n')
-    success = False
-    while not success:
-        try:
-            book = epub.open(os.path.dirname(os.path.abspath(__file__)).replace('\\', '/')+threads_list[0].title+'.epub', 'w')
-            #with epub.open(threads_list[0].title+'.epub', 'w') as book:
-            t = threads_list[0]
+
+    book = epub.open(threads_list[0].title+'.epub', 'w')
+    #with epub.open(threads_list[0].title+'.epub', 'w') as book:
+    t = threads_list[0]
+
+    book.opf.metadata.add_title(t.title)
+    book.opf.metadata.add_creator(t.author.render())
+    book.opf.metadata.add_date(strftime('%y-%m-%dT%H:%M:%SZ'))
+    book.opf.metadata.add_language('en')
+
+    for thread in threads:
+        filename = '{}.xhtml'.format(thread)
+        manifest_item = epub.opf.ManifestItem(identifier='thread_{}'.format(thread),
+                                              href=filename,
+                                              media_type='application/xhtml+xml')
+        book.add_item(filename, manifest_item, True)
+
+    for image in images_list:
+        extension = image[-4:]
+        manifest_item = epub.opf.ManifestItem(identifier='image_{}'.format(image),
+                                              href=image,
+                                              media_type=mime_type[extension])
+        book.add_item(image, manifest_item, True)
+
+    manifest_item = epub.opf.ManifestItem(identifier='style',
+                                          href='story.css',
+                                          media_type='text/css')
+    book.add_item('story.css', manifest_item)
+
+    book.toc.title = t.title
+    nav_map = book.toc.nav_map
+    nav_points = []
+    for thread in threads:
+        nav_point = epub.ncx.NavPoint()
+        nav_point.identifier = 'thread_%d' % thread
+        nav_point.add_label('Thread №%d' % thread)
+        nav_point.src = '%d.xhtml' % thread
+        nav_points.append(nav_point)
         
-            book.opf.metadata.add_title(t.title)
-            book.opf.metadata.add_creator(t.author.render())
-            book.opf.metadata.add_date(strftime('%y-%m-%dT%H:%M:%SZ'))
-            book.opf.metadata.add_language('en')
-        
-            for thread in threads:
-                filename = '{}.xhtml'.format(thread)
-                manifest_item = epub.opf.ManifestItem(identifier='thread_{}'.format(thread),
-                                                      href=filename,
-                                                      media_type='application/xhtml+xml')
-                book.add_item(filename, manifest_item, True)
-        
-            for image in images_list:
-                extension = image[-4:]
-                manifest_item = epub.opf.ManifestItem(identifier='image_{}'.format(image),
-                                                      href=image,
-                                                      media_type=mime_type[extension])
-                book.add_item(image, manifest_item, True)
-        
-            manifest_item = epub.opf.ManifestItem(identifier='style',
-                                                  href='story.css',
-                                                  media_type='text/css')
-            book.add_item('story.css', manifest_item)
-        
-            book.toc.title = t.title
-            nav_map = book.toc.nav_map
-            nav_points = []
-            for thread in threads:
-                nav_point = epub.ncx.NavPoint()
-                nav_point.identifier = 'thread_%d' % thread
-                nav_point.add_label('Thread №%d' % thread)
-                nav_point.src = '%d.xhtml' % thread
-                nav_points.append(nav_point)
-                
-            
-            nav_map.nav_point + nav_points
-            book.close()
-            success = True
-        except PermissionError:
-            consoletext.insert(END, 'Permission error! Trying again...\n')
+    
+    nav_map.nav_point + nav_points
+    book.close()
     consoletext.insert(END, 'Finished all operations! Find your downloaded file in: (TODO: add filepath)')
 
 
