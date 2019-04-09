@@ -21,8 +21,10 @@ from lxml import etree
 from lxml.builder import E
 from time import strptime, strftime
 from datetime import datetime
-import epub
+from ebooklib import epub
 #from argparse import ArgumentParser
+
+from functions import generate
 
 import os
 import sys
@@ -72,16 +74,16 @@ class Thread(object):
         body = html.find('body')
         body.append(self.op.render(display_title=False))
         #calc mean length of replies
-        mean = 0
-        for reply in self.replies:
+        mean = (self.replies[0].content + self.replies[-1].content) / 2
+        """for reply in self.replies:
             mean += len(reply.content)
-        mean /= len(self.replies)
+        mean /= len(self.replies)"""
 
         for reply in self.replies:
             # Remove user answers if not wanted.
             if only_op and not reply.is_op(self.op):
                 continue
-            if (not reply.is_op(self.op) or not only_op) and len(reply.content) < mean:
+            if (self.op.author.trip == None and self.op.author.name == None) and len(reply.content) < mean:
                 continue
 
             body.append(reply.render())
@@ -98,7 +100,10 @@ class Post(object):
         self.content = content
 
     def is_op(self, op):
-        return self.author.trip == op.author.trip
+        if self.author.trip is not None:
+            return self.author.trip == op.author.trip
+        elif self.author.name is not None:
+            return self.author.name == op.author.name
 
     def render(self, display_title=True):
         if display_title:
@@ -307,38 +312,50 @@ def main(url, forum, only_op, threads, consoletext):
 
     consoletext.insert(END, 'Finished downloading threads! Now generating Epub...\n')
 
-    book = epub.open(threads_list[0].title+'.epub', 'w')
+    book = epub.EpubBook()
     #with epub.open(threads_list[0].title+'.epub', 'w') as book:
     t = threads_list[0]
-
-    book.opf.metadata.add_title(t.title)
-    book.opf.metadata.add_creator(t.author.render())
-    book.opf.metadata.add_date(strftime('%y-%m-%dT%H:%M:%SZ'))
-    book.opf.metadata.add_language('en')
-
+    
+    book.set_identifier(t.title+str(threads[0]))
+    book.set_title(t.title)
+    book.add_author(t.author.render())
+    #book.set_date(strftime('%y-%m-%dT%H:%M:%SZ'))
+    book.set_language('en')
+    list_chaps = []
     for thread in threads:
+        
         filename = '{}.xhtml'.format(thread)
-        manifest_item = epub.opf.ManifestItem(identifier='thread_{}'.format(thread),
-                                              href=filename,
-                                              media_type='application/xhtml+xml')
-        book.add_item(filename, manifest_item, True)
+        list_chaps.append(filename)
+        """
+        #manifest_item = epub.opf.ManifestItem(identifier='thread_{}'.format(thread),
+        #                                      href=filename,
+        #                                      media_type='application/xhtml+xml')
+        chap = epub.EpubHtml(title = threads_list[threads.index(thread)].title, file_name = 'chap'+filename, lang='en')
+        #print(chap.get_body_content())
+        #print('\n'.join(open(filename, encoding='utf-8').readlines()))
+        chap.set_content('\n'.join(open(filename, encoding='utf-8').readlines()));
+        list_chaps.append(chap)
+        book.add_item(chap)"""
 
-    for image in images_list:
+    """for image in images_list:
         extension = image[-4:]
         manifest_item = epub.opf.ManifestItem(identifier='image_{}'.format(image),
                                               href=image,
                                               media_type=mime_type[extension])
-        book.add_item(image, manifest_item, True)
+        book.add_item(image, manifest_item, True)"""
 
-    manifest_item = epub.opf.ManifestItem(identifier='style',
-                                          href='story.css',
-                                          media_type='text/css')
-    book.add_item('story.css', manifest_item)
+    """css_style = epub.EpubItem(uid='style',
+                                          file_name='nav.css',
+                                          media_type='text/css', content = '\n'.join(open('story.css', encoding='utf-8').readlines()))
+    book.add_item(css_style)
+    book.spine = list_chaps
 
-    book.toc.title = t.title
-    nav_map = book.toc.nav_map
+    #book.toc.title = t.title
+    #nav_map = book.toc.nav_map
     nav_points = []
-    for thread in threads:
+    book.add_item(epub.EpubNcx())
+    book.add_item(epub.EpubNav())
+    """"""for thread in threads:
         nav_point = epub.ncx.NavPoint()
         nav_point.identifier = 'thread_%d' % thread
         nav_point.add_label('Thread №%d' % thread)
@@ -346,9 +363,10 @@ def main(url, forum, only_op, threads, consoletext):
         nav_points.append(nav_point)
         
     
-    nav_map.nav_point + nav_points
-    book.close()
-    consoletext.insert(END, 'Finished all operations! Find your downloaded file in: (TODO: add filepath)')
+    nav_map.nav_point + nav_points"""
+    #epub.write_epub(threads_list[0].title+'.epub', book)
+    generate(list_chaps, t.title, t.author.render(), "1", str(len(list_chaps)))
+    consoletext.insert(END, 'Finished all operations! The story has been saved as', t.title + "_" + "1" + "-" + str(len(list_chaps)) + ".epub")
 
 
 def restart():
