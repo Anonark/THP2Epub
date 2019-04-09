@@ -73,7 +73,9 @@ class Thread(object):
         body = html.find('body')
         body.append(self.op.render(display_title=False))
         #calc mean length of replies
-        mean = (len(self.replies[0].content) + len(self.replies[-1].content)) / 2
+        sortmean = [i for i in self.replies]
+        sortmean.sort(key=lambda x: len(x.content))
+        mean = (len(sortmean[0].content) + len(sortmean[-1].content)) / 2
         """for reply in self.replies:
             mean += len(reply.content)
         mean /= len(self.replies)"""
@@ -82,7 +84,7 @@ class Thread(object):
             # Remove user answers if not wanted.
             if only_op and not reply.is_op(self.op):
                 continue
-            if (self.op.author.trip == None and self.op.author.name == None) and len(reply.content) < mean:
+            if self.op.author.render() == 'Anonymous' and len(reply.content) < mean:
                 continue
 
             body.append(reply.render())
