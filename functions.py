@@ -1,5 +1,11 @@
 import os
 import zipfile
+from bs4 import BeautifulSoup
+def find_between(file):
+    f = open(file, "r", encoding = "utf8")
+    soup = BeautifulSoup(f, 'html.parser')
+    return soup.title
+
 def generate(html_files, novelname, author, chapter_s, chapter_e):
     epub = zipfile.ZipFile(novelname + "_" + chapter_s + "-" + chapter_e + ".epub", "w")
     epub.writestr("META-INF/container.xml", '''<container version="1.0"
