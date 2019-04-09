@@ -15,6 +15,8 @@ lxml
 
 epub
 
+tkinter
+
 (oh and of course python3 but that should be obvious)
 
 ## Installing requirements:
@@ -22,6 +24,8 @@ epub
 `pip install lxml`
 
 `pip install epub`
+
+Download ActiveTcl from [here](https://www.activestate.com/products/activetcl/)- it contains Tkinter
 
 # Usage: `python thp2epub.py -f FORUM_NAME LIST_OF_THREADS_SEPARATED_BY_SPACES`
 
