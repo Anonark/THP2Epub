@@ -7,9 +7,13 @@ Basically the same script, but with a couple of modifications to account for som
 
 It's a touhou-project.com downloader that scrapes posts from given threads.
 
-Now has a GUI!
+# Features
 
-# Requirements:
+* Has a GUI for easy use
+
+* When the OP is an Anon, automatically only download posts that are over the mean length of all posts in the thread
+
+# Requirements
 
 lxml
 
@@ -19,7 +23,7 @@ tkinter
 
 (oh and of course python3 but that should be obvious)
 
-## Installing requirements:
+## Installing requirements
 
 `pip install lxml`
 
