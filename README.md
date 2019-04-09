@@ -29,6 +29,4 @@ Example: `python thp2epub.py -f sdm 166 442 739`
 
 There are a couple of issues with file closing that cause a PermissionError to show up, just find the temp file in %LOCALAPPDATA%\Temp and rename it to something with a .zip extension then unpack it to find the .xhtml files inside, which you can import into Calibre, convert to Epub then merge into one file using EpubMerge.
 
-There may be an issue with path names (specifically, backslashes vs. forward slashes) when running on Windows. In that case, just open an issue and I'll add a zipfile.py with the neccessary modifications.
-
 Any other complaints? Make an issue.
