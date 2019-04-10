@@ -21,6 +21,7 @@ from lxml import etree, html
 from lxml.builder import E
 from time import strptime, strftime
 from datetime import datetime
+import time
 #from argparse import ArgumentParser
 
 from functions import generate
@@ -182,7 +183,11 @@ def searchstory(title, results):
     global finaldict
     finaldict = {}
     results.delete(0, END)
-    tree = html.document_fromstring(urlopen("https://www.touhou-project.com/storylist.php").read().decode('utf-8')).getroottree()
+    if not os.path.exists('storylistcache.txt') or (os.path.exists('storylistcache.txt') and (len(open('storylistcache.txt', 'r', encoding='utf-8').read()) == 0 or int(time.time()) - os.path.getmtime('storylistcache.txt') > 1209600)):
+        cache = open('storylistcache.txt', 'w', encoding='utf-8')
+        cache.write(urlopen("https://www.touhou-project.com/storylist.php").read().decode('utf-8'))
+        cache.close()
+    tree = html.document_fromstring(open('storylistcache.txt', 'r', encoding='utf-8').read()).getroottree()
     root = tree.find('//body').find('div[@id="list"]')
     #print('root', root)
     listofcyoa = root.xpath("//td[@class='listentry cyoa']")
