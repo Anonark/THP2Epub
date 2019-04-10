@@ -1,6 +1,8 @@
 # THP2Epub
 A touhou-project.com story downloader, modified from Emmanuel Gil Peyrot's THP2Epub script.
 
+Download the latest version from here: https://github.com/Anonark/THP2Epub/releases
+
 Originally from https://hg.linkmauve.fr/thp2epub/
 
 Basically the same script, but with a couple of modifications to account for some changes to the THP site (SSL, tag layout, etc.)
