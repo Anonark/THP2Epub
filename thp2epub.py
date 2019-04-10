@@ -181,6 +181,7 @@ class SearchResult(object):
 def searchstory(title, results):
     global finaldict
     finaldict = {}
+    results.delete(0, END)
     tree = html.document_fromstring(urlopen("https://www.touhou-project.com/storylist.php").read().decode('utf-8')).getroottree()
     root = tree.find('//body').find('div[@id="list"]')
     #print('root', root)
@@ -428,6 +429,7 @@ def main(url, forum, only_op, threads, consoletext):
 
 def restart():
     os.execl(sys.executable, sys.executable, * sys.argv)
+    
 
 if __name__ == '__main__':
     # do GUI
