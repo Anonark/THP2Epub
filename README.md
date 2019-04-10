@@ -21,8 +21,6 @@ It's a touhou-project.com downloader that scrapes posts from given threads.
 
 lxml
 
-epub
-
 tkinter
 
 bs4
@@ -32,8 +30,6 @@ bs4
 ## Installing requirements
 
 `pip install lxml`
-
-`pip install epub`
 
 `pip install bs4`
 
