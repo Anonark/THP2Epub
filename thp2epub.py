@@ -184,9 +184,7 @@ def searchstory(title, results):
     finaldict = {}
     results.delete(0, END)
     if not os.path.exists('storylistcache.txt') or (os.path.exists('storylistcache.txt') and (len(open('storylistcache.txt', 'r', encoding='utf-8').read()) == 0 or int(time.time()) - os.path.getmtime('storylistcache.txt') > 1209600)):
-        cache = open('storylistcache.txt', 'w', encoding='utf-8')
-        cache.write(urlopen("https://www.touhou-project.com/storylist.php").read().decode('utf-8'))
-        cache.close()
+        recache()
     tree = html.document_fromstring(open('storylistcache.txt', 'r', encoding='utf-8').read()).getroottree()
     root = tree.find('//body').find('div[@id="list"]')
     #print('root', root)
@@ -431,6 +429,12 @@ def main(url, forum, only_op, threads, consoletext):
     generate(list_chaps, temptitle, t.author.render(), "1", str(len(list_chaps)))
     consoletext.insert(END, 'Finished all operations! The story has been saved as ' + temptitle + "_" + "1" + "-" + str(len(list_chaps)) + ".epub")
 
+def recache(consoletext=None):
+    cache = open('storylistcache.txt', 'w', encoding='utf-8')
+    cache.write(urlopen("https://www.touhou-project.com/storylist.php").read().decode('utf-8'))
+    cache.close()
+    if consoletext is not None:
+        consoletext.insert(END, 'Recached Successfully!')
 
 def restart():
     os.execl(sys.executable, sys.executable, * sys.argv)
@@ -444,6 +448,9 @@ if __name__ == '__main__':
     #restart button
     filemenu = Menu(mainwindow)
     filemenu.add_command(label="Restart Program", command=restart)
+    
+    #recache button
+    filemenu.add_command(label="Recache Storylist", command=lambda:recache(consolelog))
     mainwindow.config(menu=filemenu)
     
     #show console log
