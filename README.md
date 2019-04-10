@@ -1,5 +1,5 @@
 # THP2Epub
-A modification of Emmanuel Gil Peyrot's THP2Epub script.
+A touhou-project.com story downloader, modified from Emmanuel Gil Peyrot's THP2Epub script.
 
 Originally from https://hg.linkmauve.fr/thp2epub/
 
