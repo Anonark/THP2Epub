@@ -15,6 +15,8 @@ It's a touhou-project.com downloader that scrapes posts from given threads.
 
 * Title/Author search
 
+* Storylist caching
+
 * When the OP is an Anon, automatically only download posts that are over the mean length of all posts in the thread (currently very buggy and doesn't work half of the time, but after implementation it managed to reduce my epub for A Wizard is You from 6000 pages to 2000, so it must be doing *something*)
 
 # Requirements (Assuming you don't use the packaged version)
