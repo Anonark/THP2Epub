@@ -26,10 +26,12 @@ import time
 
 from functions import generate
 
+import parselibrary
+
 import os
 import sys
 
-from tkinter import Tk, Entry, Text, IntVar, Checkbutton, Button, END, Menu, Listbox, LEFT, RIGHT, BOTTOM
+from tkinter import Tk, Entry, Text, IntVar, Checkbutton, Button, END, Menu, Listbox, LEFT, RIGHT, BOTTOM, Toplevel
 
 
 try:
@@ -348,6 +350,7 @@ def parse_thread(url, consoletext):
         return
 
 def main(url, forum, only_op, threads, consoletext):
+    global curstory
     consoletext.delete(1.0,END)
     try:
         threads = [int(i) for i in threads]
@@ -423,10 +426,26 @@ def main(url, forum, only_op, threads, consoletext):
     nav_map.nav_point + nav_points"""
     #epub.write_epub(threads_list[0].title+'.epub', book)
     invalidchars = [':', '<', '>', '"', '/', '\\', '|', '?', '*']
-    temptitle = t.title
+    if curstory is None:
+        curstory = SearchResult(t.title, t.author.render(), forum, threads)
+    temptitle = curstory.title
+    tempauthor = curstory.author
     for i in invalidchars:
         temptitle = temptitle.replace(i, '')
-    generate(list_chaps, temptitle, t.author.render(), "1", str(len(list_chaps)))
+    try:
+        os.mkdir('epubs')
+    except:
+        pass
+    generate(list_chaps, temptitle, tempauthor, "1", str(len(list_chaps)))
+    os.rename(temptitle + "_" + "1" + "-" + str(len(list_chaps)) + ".epub", os.path.join('epubs', temptitle + "_" + "1" + "-" + str(len(list_chaps)) + ".epub"))
+    if not os.path.exists(os.path.join('epubs', 'libmeta.txt')):
+        open(os.path.join('epubs', 'libmeta.txt'), 'w')
+    with open(os.path.join('epubs', 'libmeta.txt'), 'r+') as libmeta:
+        for line in libmeta.readlines():
+            if temptitle + "_" + "1" + "-" + str(len(list_chaps)) + ".epub" in line:
+                break
+        else:
+            libmeta.write(temptitle + "_" + "1" + "-" + str(len(list_chaps)) + ".epub"+':'+curstory.title+':'+curstory.author+':'+curstory.forum+'\n')
     consoletext.insert(END, 'Finished all operations! The story has been saved as ' + temptitle + "_" + "1" + "-" + str(len(list_chaps)) + ".epub")
 
 def recache(consoletext=None):
@@ -439,8 +458,30 @@ def recache(consoletext=None):
 def restart():
     os.execl(sys.executable, sys.executable, * sys.argv)
     
+def searchresultandsavetitle(searchresults, story, forum):
+    global finaldict, curstory
+    
+    curstory = finaldict[searchresults.get(searchresults.curselection())]
+    setthreadandforum(finaldict[searchresults.get(searchresults.curselection())], story, forum)
+    
+def openlib(window):
+    listlibs = parselibrary.genlibs(os.path.join('epubs', 'libmeta.txt'))
+    librarywindow = Toplevel(window)
+    librarywindow.title('Thread Library')
+    #list of downloaded books
+    listbooks = Listbox(librarywindow, width=60)
+    parsedlibs = []
+    for lib in listlibs:
+        parsedlibs.append(lib[0] + ' by ' + lib[1] + ' in ' + lib[2])
+    for lib in parsedlibs:
+        listbooks.insert(END, lib)
+    listbooks.bind("<Double-Button-1>", lambda _:parselibrary.openepub(listlibs[listbooks.curselection()[0]]))
+    listbooks.pack()
+    librarywindow.mainloop()
+    
 
 if __name__ == '__main__':
+    curstory = None
     # do GUI
     mainwindow = Tk()
     mainwindow.title('THP2Epub')
@@ -451,6 +492,9 @@ if __name__ == '__main__':
     
     #recache button
     filemenu.add_command(label="Recache Storylist", command=lambda:recache(consolelog))
+    
+    #view downloaded library
+    filemenu.add_command(label="View Downloaded", command=lambda:openlib(mainwindow))
     mainwindow.config(menu=filemenu)
     
     #show console log
@@ -477,7 +521,7 @@ if __name__ == '__main__':
     
     #search results
     searchresults = Listbox(mainwindow, width=150)
-    searchresults.bind("<Double-Button-1>", lambda _:setthreadandforum(finaldict[searchresults.get(searchresults.curselection())], story, forum))
+    searchresults.bind("<Double-Button-1>", lambda _:searchresultandsavetitle(searchresults, story, forum))
     searchresults.pack(side=LEFT)
     
     #only get op posts?
