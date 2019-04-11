@@ -32,7 +32,7 @@ import os
 import sys
 
 from tkinter import Tk, Entry, Text, IntVar, Checkbutton, Button, END, Menu, Listbox, LEFT, RIGHT, BOTTOM, Toplevel
-
+from tkinter.messagebox import showerror
 
 try:
     from urllib.request import urlopen
@@ -465,19 +465,22 @@ def searchresultandsavetitle(searchresults, story, forum):
     setthreadandforum(finaldict[searchresults.get(searchresults.curselection())], story, forum)
     
 def openlib(window):
-    listlibs = parselibrary.genlibs(os.path.join('epubs', 'libmeta.txt'))
-    librarywindow = Toplevel(window)
-    librarywindow.title('Thread Library')
-    #list of downloaded books
-    listbooks = Listbox(librarywindow, width=60)
-    parsedlibs = []
-    for lib in listlibs:
-        parsedlibs.append(lib[0] + ' by ' + lib[1] + ' in ' + lib[2])
-    for lib in parsedlibs:
-        listbooks.insert(END, lib)
-    listbooks.bind("<Double-Button-1>", lambda _:parselibrary.openepub(listlibs[listbooks.curselection()[0]]))
-    listbooks.pack()
-    librarywindow.mainloop()
+    if os.path.exists(os.path.join(os.getcwd(), 'epubs')):
+        listlibs = parselibrary.genlibs(os.path.join('epubs', 'libmeta.txt'))
+        librarywindow = Toplevel(window)
+        librarywindow.title('Thread Library')
+        #list of downloaded books
+        listbooks = Listbox(librarywindow, width=60)
+        parsedlibs = []
+        for lib in listlibs:
+            parsedlibs.append(lib[0] + ' by ' + lib[1] + ' in ' + lib[2])
+        for lib in parsedlibs:
+            listbooks.insert(END, lib)
+        listbooks.bind("<Double-Button-1>", lambda _:parselibrary.openepub(listlibs[listbooks.curselection()[0]]))
+        listbooks.pack()
+        librarywindow.mainloop()
+    else:
+        showerror(title='No downloaded files!', message='You need to have downloaded some files to be able see your library!')
     
 
 if __name__ == '__main__':
