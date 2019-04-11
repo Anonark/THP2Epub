@@ -1,4 +1,5 @@
 import os
+from tkinter.messagebox import showerror
 
 def genlibs(libmeta):
     global libdict
@@ -18,4 +19,7 @@ def openepub(name):
     global libdict
     for path, tags in libdict.items():
         if tags == name:
-            os.startfile(os.path.join('epubs', path))
+            try:
+                os.startfile(os.path.join('epubs', path))
+            except:
+                showerror(title='File does not exist', message='The epub you are trying to open does not exist!')
