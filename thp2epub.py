@@ -273,6 +273,7 @@ def parse_post(root, consolelog, downloadimg):
                 image = Image(name, url) #replace with none if image packing doesnt work
                 if len(name) > 0:
                     consolelog.insert(END, 'Added image '+ name+ ' to post\n')
+                    consolelog.see(END)
             except AttributeError:
                 image = None
         else:
@@ -363,9 +364,11 @@ def parse_thread(url, consoletext, downloadimg):
             
             
         consoletext.insert(END, 'Finished parsing thread!\n')
+        consoletext.see(END)
         return Thread(op, replies)
     except HTTPError:
         consoletext.insert(END, 'Thread not found!\n')
+        consoletext.see(END)
         return
 
 def main(url, forum, only_op, threads, consoletext, downloadimg):
@@ -375,10 +378,12 @@ def main(url, forum, only_op, threads, consoletext, downloadimg):
         threads = [int(i) for i in threads]
     except:
         consoletext.insert(END, 'Invalid characters found in thread list!')
+        consoletext.see(END)
         return
     threads_list = []
     for thread in threads:
         consoletext.insert(END, 'Rendering of thread №{}…\n'.format(thread))
+        consoletext.see(END)
         t = parse_thread(url.format(forum, thread), consoletext, downloadimg)
         threads_list.append(t)
 
@@ -386,10 +391,12 @@ def main(url, forum, only_op, threads, consoletext, downloadimg):
 
         # Use b mode as it allows us to directly dump UTF-8 data.
         consoletext.insert(END, 'Downloaded thread №{}, generating XHTML...\n'.format(thread))
+        consoletext.see(END)
         with open('{}.xhtml'.format(thread), 'wb') as f:
             f.write(etree.tostring(html, pretty_print=True, xml_declaration=True, doctype='<!DOCTYPE html SYSTEM "/tmp/test.dtd">', encoding='UTF-8'))
 
     consoletext.insert(END, 'Finished downloading threads! Now generating Epub...\n')
+    consoletext.see(END)
 
     #book = epub.EpubBook()
     #with epub.open(threads_list[0].title+'.epub', 'w') as book:
@@ -471,13 +478,16 @@ def main(url, forum, only_op, threads, consoletext, downloadimg):
         else:
             libmeta.write(temptitle + "_" + "1" + "-" + str(len(list_chaps)) + ".epub"+':'+curstory.title+':'+curstory.author+':'+curstory.forum+'\n')
     consoletext.insert(END, 'Finished all operations! The story has been saved as ' + temptitle + "_" + "1" + "-" + str(len(list_chaps)) + ".epub")
+    consoletext.see(END)
 
 def recache(consoletext=None):
     cache = open('storylistcache.txt', 'w', encoding='utf-8')
     cache.write(urlopen("https://www.touhou-project.com/storylist.php").read().decode('utf-8'))
     cache.close()
     if consoletext is not None:
+        consoletext.delete(0, END)
         consoletext.insert(END, 'Recached Successfully!')
+        consoletext.see(END)
 
 def restart():
     os.execl(sys.executable, sys.executable, * sys.argv)
