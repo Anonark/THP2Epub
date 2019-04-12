@@ -6,7 +6,7 @@ def find_between(file):
     soup = BeautifulSoup(f, 'html.parser')
     return soup.title
 
-def generate(html_files, novelname, author, chapter_s, chapter_e):
+def generate(html_files, novelname, author, chapter_s, chapter_e, threads_list):
     epub = zipfile.ZipFile(novelname + "_" + chapter_s + "-" + chapter_e + ".epub", "w")
     epub.writestr("META-INF/container.xml", '''<container version="1.0"
     xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
@@ -44,6 +44,14 @@ def generate(html_files, novelname, author, chapter_s, chapter_e):
             i + 1, basename)
         spine += '<itemref idref="file_%s" />' % (i + 1)
         epub.write(html, "OEBPS/" + basename)
+    for thread in threads_list:
+        threadpostlist = thread.replies
+        threadpostlist.insert(0, thread.op)
+        for post in threadpostlist:
+            if post.image is not None:
+                if os.path.exists(os.path.basename(post.image.name)):
+                    epub.write(os.path.basename(post.image.name), "OEBPS/" + post.image.name)
+                    os.remove(post.image.name)
 
     epub.writestr("OEBPS/Content.opf", index_tpl % {
                   "metadata": metadata,
