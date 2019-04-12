@@ -22,6 +22,7 @@ from lxml.builder import E
 from time import strptime, strftime
 from datetime import datetime
 import time
+from threading import Thread as multithread
 #from argparse import ArgumentParser
 
 from functions import generate
@@ -136,10 +137,8 @@ class Post(object):
 
 
 class Image(object):
-    def __init__(self, name, filesize, size, url):
+    def __init__(self, name, url):
         self.name = name
-        self.filesize = filesize
-        self.size = size
         self.url = url
 
     def render(self):
@@ -223,44 +222,64 @@ def setthreadandforum(searchresult, threadentry, forumentry):
     threadentry.insert(END, temp[:-1])
     forumentry.insert(END, searchresult.forum)
 
-def gettag(tree, tag):
+def gettag(tree, tag, tclass=None):
     # dfs to find 'label', 'blockquote', etc.
     found = None
     for temp in tree:
         if temp.tag == tag:
-            return temp
+            if tclass is None:
+                return temp
+            else:
+                if temp.get('class') == tclass:
+                    return temp
         found = gettag(temp, tag)
-        if found is not None and found.tag == tag:
+        if found is not None and ((tclass is None and found.tag == tag) or (tclass is not None and found.get('class') == tclass)):
             break
     return found
 
 
-def parse_post(root):
+def parse_post(root, consolelog, downloadimg):
     # We use the filesize element because it contains the image name.
     label = root.find('label')
-    filesize = root.find('span[@class="filesize"]')
-    if filesize is not None:
-        a = filesize.getnext().getnext()
-        filesize = etree.tostring(filesize, method='text', encoding='UTF-8')
-        filesize = filesize.split()
-        name = filesize[7:-2]
-        name = b' '.join(name)
-        try:
-            name = name.decode('UTF-8')
-        except UnicodeDecodeError:
-            for i in range(-5, -42, -1):
-                char = name[i] if type(name[i]) is int else ord(name[i])
-                if char & 0xc0 == 0xc0:
-                    name = name[:i-1] + b'\xef\xbf\xbd' + name[-4:]
-                    break
-            name = name.decode('UTF-8')
-        filesize, size = filesize[3][1:], filesize[5]
-        if a.tag == 'a':
-            url = a.get('href')
+    if downloadimg:
+        fileprops = gettag(root, 'span', 'fileprops')
+        if fileprops is not None:
+            thumblink = gettag(fileprops, 'a', 'thumblink')
+            try:
+                name = gettag(fileprops, 'span', 'forigname').text
+                url = thumblink.get('href')
+                '''a = filesize.getnext().getnext()
+                filesize = etree.tostring(filesize, method='text', encoding='UTF-8')
+                filesize = filesize.split()
+                name = filesize[7:-2]'''
+                '''name = b' '.join(name)
+                try:
+                    name = name.decode('UTF-8')
+                except UnicodeDecodeError:
+                    for i in range(-5, -42, -1):
+                        char = name[i] if type(name[i]) is int else ord(name[i])
+                        if char & 0xc0 == 0xc0:
+                            name = name[:i-1] + b'\xef\xbf\xbd' + name[-4:]
+                            break
+                    name = name.decode('UTF-8')'''
+                #filesize, size = filesize[3][1:], filesize[5]
+                '''if a.tag == 'a':
+                    url = a.get('href')
+                    a.attrib['href'] = name
+                else:
+                    url = a.find('img').get('src')
+                    a.find('img').attrib['src'] = name'''
+                name = name + url[-4:]
+                image = Image(name, url) #replace with none if image packing doesnt work
+                if len(name) > 0:
+                    consolelog.insert(END, 'Added image '+ name+ ' to post\n')
+            except AttributeError:
+                image = None
         else:
-            url = a.find('img').get('src')
-
-        image = Image(name, filesize, size, url)
+            image = None
+        thumbsrc = gettag(root, 'img', 'thumb')
+        if thumbsrc is not None:
+            thumbsrc.attrib['src'] = image.name
     else:
         image = None
 
@@ -324,7 +343,7 @@ def parse_post(root):
     return Post(title, author, date, image, content)
 
 
-def parse_thread(url, consoletext):
+def parse_thread(url, consoletext, downloadimg):
     consoletext.insert(END, 'URL of thread: '+url+'\n')
     consoletext.insert(END, 'Parsing thread...\n')
     try:
@@ -335,12 +354,12 @@ def parse_thread(url, consoletext):
             if root is None or root.find('blockquote') is None:
                 root = tree.find('//body')"""
         root = tree.find('//body')
-        op = parse_post(root)
+        op = parse_post(root, consoletext, downloadimg)
     
         replies = []
         td = root.findall('.//td[@class="reply"]')
         for reply in td:
-            replies.append(parse_post(reply))
+            replies.append(parse_post(reply, consoletext, downloadimg))
             
             
         consoletext.insert(END, 'Finished parsing thread!\n')
@@ -349,7 +368,7 @@ def parse_thread(url, consoletext):
         consoletext.insert(END, 'Thread not found!\n')
         return
 
-def main(url, forum, only_op, threads, consoletext):
+def main(url, forum, only_op, threads, consoletext, downloadimg):
     global curstory
     consoletext.delete(1.0,END)
     try:
@@ -360,7 +379,7 @@ def main(url, forum, only_op, threads, consoletext):
     threads_list = []
     for thread in threads:
         consoletext.insert(END, 'Rendering of thread №{}…\n'.format(thread))
-        t = parse_thread(url.format(forum, thread), consoletext)
+        t = parse_thread(url.format(forum, thread), consoletext, downloadimg)
         threads_list.append(t)
 
         html = t.render(only_op)
@@ -436,8 +455,13 @@ def main(url, forum, only_op, threads, consoletext):
         os.mkdir('epubs')
     except:
         pass
-    generate(list_chaps, temptitle, tempauthor, "1", str(len(list_chaps)))
-    os.rename(temptitle + "_" + "1" + "-" + str(len(list_chaps)) + ".epub", os.path.join('epubs', temptitle + "_" + "1" + "-" + str(len(list_chaps)) + ".epub"))
+    makeepub = multithread(target=generate, args=(list_chaps, temptitle, tempauthor, "1", str(len(list_chaps)), threads_list))
+    makeepub.start()
+    makeepub.join()
+    tempttl = temptitle + "_" + "1" + "-" + str(len(list_chaps)) + ".epub"
+    if os.path.exists(os.path.join('epubs', tempttl)):
+        os.remove(os.path.join('epubs', tempttl))
+    os.rename(tempttl, os.path.join('epubs', tempttl))
     if not os.path.exists(os.path.join('epubs', 'libmeta.txt')):
         open(os.path.join('epubs', 'libmeta.txt'), 'w')
     with open(os.path.join('epubs', 'libmeta.txt'), 'r+') as libmeta:
@@ -531,8 +555,12 @@ if __name__ == '__main__':
     onlyop = IntVar(value=1)
     Checkbutton(mainwindow, text="Download only OP posts?", variable=onlyop).pack(side=BOTTOM)
     
+    #download images?
+    downloadimg = IntVar(value=0)
+    Checkbutton(mainwindow, text="Download images?", variable=downloadimg).pack(side=BOTTOM)
+    
     #download button
-    downloadbutton = Button(mainwindow, text='Download', command=lambda: main('https://www.touhou-project.com/{}/res/{}.html', forum.get(), True if onlyop.get() == 1 else False, story.get().split(), consolelog))
+    downloadbutton = Button(mainwindow, text='Download', command=lambda: multithread(target=main, args=('https://www.touhou-project.com/{}/res/{}.html', forum.get(), True if onlyop.get() == 1 else False, story.get().split(), consolelog, True if downloadimg.get() == 1 else False)).start())
     downloadbutton.pack(side=BOTTOM)
     
     mainwindow.mainloop()
