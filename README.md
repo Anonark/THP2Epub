@@ -5,7 +5,7 @@ Download the latest version from [here](https://github.com/Anonark/THP2Epub/rele
 
 Originally from https://hg.linkmauve.fr/thp2epub/
 
-Basically the same script, but with a couple of modifications to account for some changes to the THP site (SSL, tag layout, etc.)
+It started out as basically the same script, but with a couple of modifications to account for some changes to the THP site (SSL, tag layout, etc.) Now, it's gotten enough features to become a full-fledged project of its own.
 
 It's a touhou-project.com downloader that scrapes posts from given threads.
 
