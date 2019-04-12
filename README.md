@@ -41,6 +41,4 @@ Download ActiveTcl from [here](https://www.activestate.com/products/activetcl/)-
 
 # Usage: `python thp2epub.py`
 
-There are a couple of issues with file closing that cause a PermissionError to show up, just find the temp file in %LOCALAPPDATA%\Temp and rename it to something with a .zip extension then unpack it to find the .xhtml files inside, which you can import into Calibre, convert to Epub then merge into one file using EpubMerge.
-
-Any other complaints? Make an issue.
+Any complaints? Make an issue.
