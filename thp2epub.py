@@ -171,14 +171,13 @@ class SearchResult(object):
     def __init__(self, title, author, forum, links):
         self.title = title
         self.author = author
+        if self.author is None:
+            self.author = 'Anonymous'
         self.forum = forum
         self.links = links
         
     def __repr__(self):
-        if self.author is not None:
-            return self.title + ' by ' + self.author + ' in ' + self.forum + '\n'
-        else:
-            return self.title + ' by Anonymous in ' + self.forum + '\n'
+        return self.title + ' by ' + self.author + ' in ' + self.forum + '\n'
 
 def searchstory(title, results):
     global finaldict
@@ -476,7 +475,7 @@ def main(url, forum, only_op, threads, consoletext, downloadimg):
             if temptitle + "_" + "1" + "-" + str(len(list_chaps)) + ".epub" in line:
                 break
         else:
-            libmeta.write(temptitle + "_" + "1" + "-" + str(len(list_chaps)) + ".epub"+':'+curstory.title+':'+curstory.author+':'+curstory.forum+'\n')
+            libmeta.write(temptitle + "_" + "1" + "-" + str(len(list_chaps)) + ".epub"+':'+temptitle+':'+tempauthor+':'+curstory.forum+'\n')
     consoletext.insert(END, 'Finished all operations! The story has been saved as ' + temptitle + "_" + "1" + "-" + str(len(list_chaps)) + ".epub")
     consoletext.see(END)
 
