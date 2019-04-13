@@ -455,6 +455,11 @@ def main(url, forum, only_op, threads, consoletext, downloadimg):
         curstory = SearchResult(t.title, t.author.render(), forum, threads)
     temptitle = curstory.title
     tempauthor = curstory.author
+    tempforum = curstory.forum
+    if tempauthor is None:
+        tempauthor = 'Anonymous'
+    if tempforum is None:
+        tempforum = 'unknown'
     for i in invalidchars:
         temptitle = temptitle.replace(i, '')
     try:
@@ -475,7 +480,7 @@ def main(url, forum, only_op, threads, consoletext, downloadimg):
             if temptitle + "_" + "1" + "-" + str(len(list_chaps)) + ".epub" in line:
                 break
         else:
-            libmeta.write(temptitle + "_" + "1" + "-" + str(len(list_chaps)) + ".epub"+':'+temptitle+':'+tempauthor+':'+curstory.forum+'\n')
+            libmeta.write(temptitle + "_" + "1" + "-" + str(len(list_chaps)) + ".epub"+':'+temptitle+':'+tempauthor+':'+tempforum+'\n')
     consoletext.insert(END, 'Finished all operations! The story has been saved as ' + temptitle + "_" + "1" + "-" + str(len(list_chaps)) + ".epub")
     consoletext.see(END)
 
