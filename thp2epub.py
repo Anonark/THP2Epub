@@ -54,13 +54,19 @@ mime_type = {
 
 
 class Thread(object):
-    def __init__(self, op, replies):
+    def __init__(self, op, replies, title):
         self.op = op
         self.replies = replies
-        self.title = op.title
+        self.title = title
         if self.title is None:
             self.title = 'blank'
         self.author = op.author
+        
+    def postlen(self, post):
+        length = 0
+        for i in post.content:
+            length += len(etree.tostring(i))
+        return length
 
     def render(self, only_op):
         html = E.html(
@@ -77,20 +83,20 @@ class Thread(object):
         body = html.find('body')
         body.append(self.op.render(display_title=False))
         #calc mean length of replies
-        sortmean = [i for i in self.replies]
-        sortmean.sort(key=lambda x: len(x.content))
-        mean = (len(sortmean[0].content) + len(sortmean[-1].content)) / 2
-        """for reply in self.replies:
-            mean += len(reply.content)
-        mean /= len(self.replies)"""
+        sortmean = [i for i in self.replies if self.postlen(i) > 0]
+        #sortmean.sort(key=lambda x: self.postlen(x))
+        mean = sum(self.postlen(i) for i in sortmean) / len(sortmean)
+        #print('mean reply length:', mean)
 
+        if self.author.name == 'Anonymous' or self.author.name == '' or self.author.name == None:
+            only_op = False
         for reply in self.replies:
             # Remove user answers if not wanted.
             if only_op and not reply.is_op(self.op):
                 continue
-            if self.op.author.render() == 'Anonymous' and len(reply.content) < mean:
+            if not only_op and self.postlen(reply) < mean:
                 continue
-
+            
             body.append(reply.render())
 
         return html
@@ -105,10 +111,13 @@ class Post(object):
         self.content = content
 
     def is_op(self, op):
-        if self.author.trip is not None:
+        if self.author.render() == op.author.render() or (self.author.trip == op.author.trip and self.author.trip != ''):
+            return True
+        return False
+        """if self.author.trip is not None:
             return self.author.trip == op.author.trip
         elif self.author.name is not None:
-            return self.author.name == op.author.name
+            return self.author.name == op.author.name"""
 
     def render(self, display_title=True):
         if display_title:
@@ -162,8 +171,10 @@ class Author(object):
         self.mail = mail
 
     def render(self):
-        if self.name is not None or self.trip is not None:
+        if self.name is not None and self.trip is not None:
             return '{}{}'.format(self.name, self.trip)
+        elif self.name is not None:
+            return self.name
         else:
             return 'Anonymous'
         
@@ -223,23 +234,22 @@ def setthreadandforum(searchresult, threadentry, forumentry):
 
 def gettag(tree, tag, tclass=None):
     # dfs to find 'label', 'blockquote', etc.
-    found = None
+    if tree.tag == tag:
+        if tclass is None:
+            return tree
+        else:
+            if tree.get('class') == tclass:
+                return tree
     for temp in tree:
-        if temp.tag == tag:
-            if tclass is None:
-                return temp
-            else:
-                if temp.get('class') == tclass:
-                    return temp
-        found = gettag(temp, tag)
-        if found is not None and ((tclass is None and found.tag == tag) or (tclass is not None and found.get('class') == tclass)):
-            break
-    return found
+        found = gettag(temp, tag, tclass)
+        if found is not None: #and ((tclass is None and found.tag == tag) or (tclass is not None and found.attrib['class'] == tclass)):
+            return found
+    return None
 
 
 def parse_post(root, consolelog, downloadimg):
     # We use the filesize element because it contains the image name.
-    label = root.find('label')
+    label = gettag(root, 'label')
     if downloadimg:
         fileprops = gettag(root, 'span', 'fileprops')
         if fileprops is not None:
@@ -284,7 +294,7 @@ def parse_post(root, consolelog, downloadimg):
         image = None
 
     #label = root.find('label')
-    label = gettag(root, 'label')
+    
     """if label is None:
         label = root.find('div[@class="post originalpost"]')
         if label is not None:
@@ -296,32 +306,34 @@ def parse_post(root, consolelog, downloadimg):
             else:
                 label = root.find('div[@class="originalpost post"]').find('label')
     """
-    title = label.find('span[@class="filetitle"]')
+    #title = label.find('span[@class="filetitle"]')
+    title = gettag(label, 'span', 'filetitle')
     title = title.text.strip() if title is not None else None
-    name = label.find('span[@class="postername"]')
+    name = gettag(label, 'span', 'postername')
     if name is not None:
-        last = name
         a = name.find('a')
         if a is not None:
-            mail = a.get('href')
+            #mail = a.get('href')
             name = a.text
         else:
-            mail = ''
+            #mail = ''
             name = name.text
-    else:
-        mail = ''
-        name = ''
 
-    postertrip = label.find('span[@class="postertrip"]')
+    #postertrip = label.find('span[@class="postertrip"]')
+    postertrip = gettag(label, 'span', 'postertrip')
     if postertrip is not None:
         trip = postertrip.text
-        last = postertrip
     else:
         trip = ''
-
-    author = Author(name, trip, mail)
+    if name == '':
+        name = None
+    author = Author(name, trip, None)
+    last = gettag(label, 'span', 'posttime')
     try:
-        date = strptime(last.tail.strip(), '%y/%m/%d(%a)%H:%M')
+        if last is not None:
+            date = strptime(last.text.strip(), '%y/%m/%d(%a)%H:%M')
+        else:
+            date = strptime(label[-1].tail.strip(), '%y/%m/%d(%a)%H:%M')
     except:
         date = datetime(2019, 1, 1, 0, 0).timetuple()
 
@@ -364,7 +376,8 @@ def parse_thread(url, consoletext, downloadimg):
             
         consoletext.insert(END, 'Finished parsing thread!\n')
         consoletext.see(END)
-        return Thread(op, replies)
+        title = gettag(root, 'span', 'filetitle')
+        return Thread(op, replies, title.text.strip() if title is not None else None)
     except HTTPError:
         consoletext.insert(END, 'Thread not found!\n')
         consoletext.see(END)
