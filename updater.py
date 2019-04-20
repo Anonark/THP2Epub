@@ -9,14 +9,17 @@ import webbrowser
 try:
     from git import Repo
 except:
+    temp = open('errlog.txt', 'a')
+    temp.write('Git not present\n')
+    temp.close()
     raise ImportError
 #from pyinstaller.__main__ import run as pyinstaller
 def cleanup():
-    if os.path.exists('python37.zip'):
+    if os.path.exists(os.getcwd()+'\\python37.zip'):
         os.remove('python37.zip')
-    if os.path.exists('get-pip.py'):
+    if os.path.exists(os.getcwd()+'\\get-pip.py'):
         os.remove('get-pip.py')
-    if os.path.exists('python'):
+    if os.path.exists(os.getcwd()+'\\python'):
         shutil.rmtree('python')
 def main():
     cleanup()
@@ -43,6 +46,9 @@ def main():
         updatewindow.destroy()
         webbrowser.open('https://git-scm.com/downloads')
         cleanup()
+        temp = open('errlog.txt', 'a')
+        temp.write('Git not present\n')
+        temp.close()
         return
     except:
         #could not clone from repo, end
@@ -58,12 +64,15 @@ def main():
             showerror(title='Failed to package thp2epub.py', message='Update failed due to packaging error!')
             updatewindow.destroy()
             cleanup()
+            temp = open('errlog.txt', 'a')
+            temp.write('Packaging failed\n')
+            temp.close()
             return
         
         #move thp2epub.exe from dist/ to main folder, then delete dist/ and git/
         
         temp = open('delreplace.bat', 'w')
-        temp.write('taskkill /f /im thp2epub.exe\ndel thp2epub.exe\nmove \\dist\\thp2epub.exe \\\nrmdir /s /q \\python\nrmdir /s /q \\dist\ndel python37.zip\nstart thp2epub.exe\n( del /q /f "%~f0" >nul 2>&1 & exit /b 0  )')
+        temp.write('taskkill /f /im thp2epub.exe\ndel thp2epub.exe\nmove \\dist\\thp2epub.exe \\\nrmdir /s /q \\python\nrmdir /s /q \\dist\ndel python37.zip\ncopy /b thp2epub.exe+\nstart thp2epub.exe\n( del /q /f "%~f0" >nul 2>&1 & exit /b 0  )')
         temp.close()
         os.startfile('delreplace.bat')
     else:
