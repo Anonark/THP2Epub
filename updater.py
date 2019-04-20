@@ -4,13 +4,22 @@ from tkinter.messagebox import showerror
 import zipfile
 import urllib
 import shutil
+import time
 import webbrowser
 try:
     from git import Repo
 except:
     raise ImportError
 #from pyinstaller.__main__ import run as pyinstaller
+def cleanup():
+    if os.path.exists('python37.zip'):
+        os.remove('python37.zip')
+    if os.path.exists('get-pip.py'):
+        os.remove('get-pip.py')
+    if os.path.exists('python'):
+        shutil.rmtree('python')
 def main():
+    cleanup()
     #open new tkinter window
     #use pyinstaller('thp2epub.py', 'onefile') (? Correct?) to package thp2epub
     #use pyinstaller to package updater.py
@@ -27,17 +36,19 @@ def main():
     os.system(os.getcwd()+'\\python\\python.exe get-pip.py')
     os.system('pip install pyinstaller')#os.getcwd()+'\\python\\python.exe -m
     try:
-        repo = Repo.clone_from('https://github.com/Anonark/THP2Epub', os.path.join(os.getcwd(), 'git'))
+        repo = Repo.clone_from('https://github.com/Anonark/THP2Epub', os.path.join(os.getcwd(), 'git'+str(int(time.time()))))
         lastcommit = repo.head.commit
     except ImportError:
         showerror(title='Git not found', message='Git is not installed! Get it here: https://git-scm.com/downloads')
         updatewindow.destroy()
         webbrowser.open('https://git-scm.com/downloads')
+        cleanup()
         return
     except:
         #could not clone from repo, end
         showerror(title='Failed to clone from repo!', message='Could not clone files from https://github.com/Anonark/THP2Epub')
         updatewindow.destroy()
+        cleanup()
         return
     if lastcommit.committed_date > int(os.path.getmtime('thp2epub.exe')):  
         try:
@@ -46,21 +57,18 @@ def main():
         except:
             showerror(title='Failed to package thp2epub.py', message='Update failed due to packaging error!')
             updatewindow.destroy()
+            cleanup()
             return
-        del repo
+        
         #move thp2epub.exe from dist/ to main folder, then delete dist/ and git/
         
         temp = open('delreplace.bat', 'w')
-        temp.write('taskkill /f /im thp2epub.exe\ndel thp2epub.exe\nmove \\dist\\thp2epub.exe \\\nrmdir /s /q \\python\nrmdir /s /q \\dist\nrmdir /s /q \\git\ndel python37.zip\nstart thp2epub.exe\n( del /q /f "%~f0" >nul 2>&1 & exit /b 0  )')
+        temp.write('taskkill /f /im thp2epub.exe\ndel thp2epub.exe\nmove \\dist\\thp2epub.exe \\\nrmdir /s /q \\python\nrmdir /s /q \\dist\ndel python37.zip\nstart thp2epub.exe\n( del /q /f "%~f0" >nul 2>&1 & exit /b 0  )')
         temp.close()
         os.startfile('delreplace.bat')
     else:
-        del repo
         showerror(title='No updates required!', message='Your THP2Epub is up to date!')
         updatewindow.destroy()
-        os.remove('python37.zip')
-        os.remove('get-pip.py')
-        shutil.rmtree('python')
-        shutil.rmtree('git')
+        cleanup()
         return
     updatewindow.mainloop()

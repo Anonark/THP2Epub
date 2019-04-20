@@ -16,7 +16,7 @@
 
 
 from __future__ import unicode_literals
-
+import shutil
 from lxml import etree, html
 from lxml.builder import E
 from time import strptime, strftime
@@ -194,6 +194,7 @@ class SearchResult(object):
 
 def searchstory(title, results):
     global finaldict
+    cleanup()
     finaldict = {}
     results.delete(0, END)
     if not os.path.exists('storylistcache.txt') or (os.path.exists('storylistcache.txt') and (len(open('storylistcache.txt', 'r', encoding='utf-8').read()) == 0 or int(time.time()) - os.path.getmtime('storylistcache.txt') > 1209600)):
@@ -388,9 +389,16 @@ def parse_thread(url, consoletext, downloadimg):
         consoletext.insert(END, 'Thread not found!\n')
         consoletext.see(END)
         return
-
+def cleanup():
+    for obj in os.listdir(os.getcwd()):
+        if 'git' in obj:
+            try:
+                shutil.rmtree(obj)
+            except:
+                print('Failed to remove git remnants')
 def main(url, forum, only_op, threads, consoletext, downloadimg):
     global curstory
+    cleanup()
     consoletext.delete(1.0,END)
     try:
         threads = [int(i) for i in threads]
@@ -504,6 +512,7 @@ def main(url, forum, only_op, threads, consoletext, downloadimg):
     consoletext.see(END)
 
 def recache(consoletext=None):
+    cleanup()
     cache = open('storylistcache.txt', 'w', encoding='utf-8')
     cache.write(urlopen("https://www.touhou-project.com/storylist.php").read().decode('utf-8'))
     cache.close()
@@ -513,6 +522,7 @@ def recache(consoletext=None):
         consoletext.see(END)
 
 def restart():
+    cleanup()
     os.execl(sys.executable, sys.executable, * sys.argv)
     
 def searchresultandsavetitle(searchresults, story, forum):
