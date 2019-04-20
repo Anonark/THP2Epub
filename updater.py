@@ -19,8 +19,12 @@ def cleanup():
         os.remove('python37.zip')
     if os.path.exists(os.getcwd()+'\\get-pip.py'):
         os.remove('get-pip.py')
+    if os.path.exists(os.getcwd()+'\\thp2epub.spec'):
+        os.remove('thp2epub.spec')
     if os.path.exists(os.getcwd()+'\\python'):
         shutil.rmtree('python')
+    if os.path.exists(os.getcwd()+'\\build'):
+        shutil.rmtree('build')
 def main():
     cleanup()
     #open new tkinter window
