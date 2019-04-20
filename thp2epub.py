@@ -398,6 +398,7 @@ def cleanup():
                 print('Failed to remove git remnants')
 def main(url, forum, only_op, threads, consoletext, downloadimg):
     global curstory
+    updater.cleanup()
     cleanup()
     consoletext.delete(1.0,END)
     try:

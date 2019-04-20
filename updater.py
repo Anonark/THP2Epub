@@ -25,6 +25,8 @@ def cleanup():
         shutil.rmtree('python')
     if os.path.exists(os.getcwd()+'\\build'):
         shutil.rmtree('build')
+    if os.path.exists(os.getcwd()+'\\dist'):
+        shutil.rmtree('dist')
 def main():
     cleanup()
     #open new tkinter window
