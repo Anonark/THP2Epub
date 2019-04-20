@@ -25,6 +25,8 @@ import time
 from threading import Thread as multithread
 #from argparse import ArgumentParser
 
+import updater
+
 from functions import generate
 
 import parselibrary
@@ -347,6 +349,10 @@ def parse_post(root, consolelog, downloadimg):
             blockquote = root.find('div[@class="post originalpost"]').find('blockquote')
     """
     content = []
+    if blockquote.text is not None:
+        temp = etree.Element('br')
+        temp.text = blockquote.text.strip()#.encode('utf-8')
+        content.append(temp)
     for item in blockquote:
         if item is str and item.strip() == '':
             continue
@@ -549,6 +555,10 @@ if __name__ == '__main__':
     
     #view downloaded library
     filemenu.add_command(label="View Downloaded", command=lambda:openlib(mainwindow))
+    
+    #check for updates
+    filemenu.add_command(label="Update", command=updater.main)
+    
     mainwindow.config(menu=filemenu)
     
     #show console log
