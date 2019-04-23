@@ -64,7 +64,7 @@ def main():
         return
     if lastcommit.committed_date > int(os.path.getmtime('thp2epub.exe')):  
         try:
-            os.system('pyinstaller '+os.getcwd()+'\\git\\thp2epub.py -F')
+            os.system('pyinstaller '+os.getcwd()+'\\git\\thp2epub.py -F --icon=tokiko.ico')
             #pyinstaller.run([os.path.join('git', 'thp2epub.py'), '-F'])
         except:
             showerror(title='Failed to package thp2epub.py', message='Update failed due to packaging error!')
