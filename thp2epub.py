@@ -332,11 +332,12 @@ def parse_post(root, consolelog, downloadimg):
         name = None
     author = Author(name, trip, None)
     last = gettag(label, 'span', 'posttime')
+    #print(label.tag, label.attrib, label.text)
     try:
         if last is not None:
-            date = strptime(last.text.strip(), '%y/%m/%d(%a)%H:%M')
+            date = strptime(last.text.strip(), '%Y/%m/%d(%a)%H:%M')
         else:
-            date = strptime(label[-1].tail.strip(), '%y/%m/%d(%a)%H:%M')
+            date = strptime(label[-1].tail.strip(), '%Y/%m/%d(%a)%H:%M')
     except:
         date = datetime(2019, 1, 1, 0, 0).timetuple()
 
@@ -373,6 +374,10 @@ def parse_thread(url, consoletext, downloadimg):
             if root is None or root.find('blockquote') is None:
                 root = tree.find('//body')"""
         root = tree.find('//body')
+        temp = [root.find('div[@id="SettingsModal"]'), root.find('div[@class="navigation"]'), root.find('div[@class="logo"]'), root.find('div[@id="showreplybox"]'), root.find('div[@class="postarea"]')]
+        for i in temp:    
+            if i is not None:
+                root.remove(i)
         op = parse_post(root, consoletext, downloadimg)
     
         replies = []
