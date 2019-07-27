@@ -2,10 +2,10 @@
 # -*- encoding: UTF-8 -*-
 ##
 ## Copyright © 2012 Emmanuel Gil Peyrot <linkmauve@linkmauve.fr>
-## Modifications & bug fixes provided by MKC 2019
+## Modifications & bug fixes provided by MKC (Anonark) 2019
 ##
 ## This program is free software; you can redistribute it and/or modify
-## itoim under the terms of the GNU General Public License as published
+## it under the terms of the GNU General Public License as published
 ## by the Free Software Foundation; version 3 only.
 ##
 ## This program is distributed in the hope that it will be useful,
